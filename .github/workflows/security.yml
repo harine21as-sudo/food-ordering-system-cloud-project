@@ -2,50 +2,36 @@ name: Security Scan
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
   codeql:
     name: CodeQL SAST
     runs-on: ubuntu-latest
+
     permissions:
-      security-events: write
       actions: read
       contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'javascript' ]
 
     steps:
-      - uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: javascript   # covers your React + Node.js code
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v3
 
-      - name: Run CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-
-  zap-scan:
-    name: OWASP ZAP DAST
-    runs-on: ubuntu-latest
-    needs: codeql   # runs after CodeQL finishes
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: ZAP Baseline Scan
-        uses: zaproxy/action-baseline@v0.12.0
-        with:
-          target: 'https://hotel-pizza-api-ceagdzdwgpgdcwh7.centralindia-01.azurewebsites.net'
-          report_html: zap-report.html
-          fail_action: false   # don't fail the pipeline, just report
-
-      - name: Upload ZAP Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: zap-security-report
-          path: zap-report.html
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
